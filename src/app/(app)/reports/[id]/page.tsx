@@ -46,12 +46,12 @@ export default async function ReportDetailPage({
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
-        {/* PDF-Vorschau */}
+        {/* Sofort-Vorschau (HTML, identisches Layout wie PDF) */}
         <div className="rounded-lg border bg-white p-2">
           <iframe
-            src={`/reports/${id}/pdf`}
-            className="h-[800px] w-full rounded"
-            title="PDF-Vorschau"
+            src={`/reports/${id}/preview`}
+            className="h-[900px] w-full rounded bg-white"
+            title="Vorschau"
           />
         </div>
 

@@ -76,16 +76,19 @@ export async function importResourcesFromUpload(formData: FormData) {
 // ---------- Mitarbeiter ----------
 
 export async function createEmployee(formData: FormData) {
-  const funktion = String(formData.get("funktion") ?? "").trim();
-  const resource = await prisma.resource.findFirst({
-    where: { kategorie: "LABOR", bezeichnung: { contains: funktion, mode: "insensitive" } },
-  });
+  // Funktion wird über die verknüpfte LABOR-Ressource (Ansatz) gewählt.
+  const resourceId = String(formData.get("resourceId") ?? "").trim() || null;
+  let funktion = String(formData.get("funktion") ?? "").trim();
+  if (resourceId) {
+    const res = await prisma.resource.findUnique({ where: { id: resourceId } });
+    if (res) funktion = res.bezeichnung;
+  }
   await prisma.employee.create({
     data: {
       vorname: String(formData.get("vorname") ?? "").trim(),
       nachname: String(formData.get("nachname") ?? "").trim() || null,
       funktion,
-      resourceId: resource?.id ?? null,
+      resourceId,
     },
   });
   revalidatePath("/stammdaten/employees");

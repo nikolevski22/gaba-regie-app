@@ -16,7 +16,11 @@ export default async function EditReportPage({
   const { id } = await params;
   const [report, employees] = await Promise.all([
     loadReport(id),
-    prisma.employee.findMany({ where: { aktiv: true }, orderBy: { vorname: "asc" } }),
+    prisma.employee.findMany({
+      where: { aktiv: true },
+      orderBy: { vorname: "asc" },
+      include: { resource: true },
+    }),
   ]);
   if (!report) notFound();
 
@@ -58,6 +62,10 @@ export default async function EditReportPage({
     vorname: e.vorname,
     nachname: e.nachname,
     funktion: e.funktion,
+    artikelNr: e.resource?.artikelNr ?? null,
+    preis: e.resource ? Number(e.resource.preis) : null,
+    einheit: e.resource?.einheit ?? "Std",
+    resourceId: e.resourceId,
   }));
 
   return (

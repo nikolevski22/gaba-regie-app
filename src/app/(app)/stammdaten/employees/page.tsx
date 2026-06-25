@@ -9,6 +9,12 @@ export default async function EmployeesPage() {
     include: { resource: true },
   });
 
+  // Funktionen mit Stundenansatz (aus dem Katalog), für die Auswahl
+  const funktionen = await prisma.resource.findMany({
+    where: { kategorie: "LABOR", aktiv: true },
+    orderBy: { preis: "desc" },
+  });
+
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-semibold">Mitarbeiter</h1>
@@ -16,7 +22,14 @@ export default async function EmployeesPage() {
       <form action={createEmployee} className="flex flex-wrap items-end gap-2 rounded-lg border bg-white p-3">
         <input name="vorname" placeholder="Vorname" className="w-40 rounded border px-2 py-1 text-sm" required />
         <input name="nachname" placeholder="Nachname (optional)" className="w-40 rounded border px-2 py-1 text-sm" />
-        <input name="funktion" placeholder="Funktion (z. B. Gipser)" className="w-48 rounded border px-2 py-1 text-sm" required />
+        <select name="resourceId" className="w-64 rounded border px-2 py-1 text-sm" required defaultValue="">
+          <option value="" disabled>Funktion (Ansatz) wählen …</option>
+          {funktionen.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.bezeichnung} — {Number(f.preis).toFixed(2)}/{f.einheit}
+            </option>
+          ))}
+        </select>
         <Button type="submit">+ Hinzufügen</Button>
       </form>
 

@@ -27,6 +27,11 @@ export interface EmployeeOption {
   vorname: string;
   nachname?: string | null;
   funktion: string;
+  // aus der verknüpften Funktion (LABOR-Artikel): Ansatz + Artikelnummer
+  artikelNr?: string | null;
+  preis?: number | null;
+  einheit?: string | null;
+  resourceId?: string | null;
 }
 
 const GRUPPE_LABEL: Record<Gruppe, string> = {
@@ -321,15 +326,23 @@ export function ReportForm({
                             value={l.employeeId ?? ""}
                             onChange={(e) => {
                               const emp = employees.find((x) => x.id === e.target.value);
+                              if (!emp) {
+                                updateLine(l.key, { employeeId: null });
+                                return;
+                              }
+                              // Funktion liefert Ansatz + Artikelnummer (nicht der Mitarbeiter selbst)
                               updateLine(l.key, {
-                                employeeId: e.target.value || null,
-                                bezeichnung: emp
-                                  ? `${emp.funktion} ${emp.vorname}`
-                                  : l.bezeichnung,
+                                employeeId: emp.id,
+                                bezeichnung: `${emp.funktion} ${emp.vorname}`.trim(),
+                                artikelNr: emp.artikelNr ?? l.artikelNr,
+                                resourceId: emp.resourceId ?? l.resourceId,
+                                einheit: emp.einheit ?? l.einheit ?? "Std",
+                                preis:
+                                  emp.preis != null && emp.preis > 0 ? emp.preis : l.preis,
                               });
                             }}
                             className="rounded border px-1 py-1 text-xs"
-                            title="Mitarbeiter"
+                            title="Mitarbeiter (Funktion bestimmt den Ansatz)"
                           >
                             <option value="">– MA –</option>
                             {employees.map((emp) => (

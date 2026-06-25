@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --gaba: #1a2a8f;
+}
+
+html,
+body {
+  @apply bg-neutral-50 text-neutral-900 antialiased;
+}
+
+/* Druck-Layout für die PDF-/Print-Vorschau */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

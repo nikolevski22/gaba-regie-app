@@ -338,14 +338,12 @@ export function ReportForm({
       {/* Positionen */}
       <div className="rounded-lg border bg-white p-4">
         <div className="mb-3 flex flex-wrap items-center gap-2">
-          <div className="w-72">
-            <ResourcePicker onPick={addFromResource} placeholder="Artikel suchen & hinzufügen …" />
+          <div className="w-96 max-w-full">
+            <ResourcePicker
+              onPick={addFromResource}
+              placeholder="Material, Maschine, Fahrzeug, Personal … suchen & hinzufügen"
+            />
           </div>
-          {GRUPPEN.map((g) => (
-            <Button key={g} variant="secondary" onClick={() => addEmpty(g)}>
-              + {GRUPPE_LABEL[g]}
-            </Button>
-          ))}
           <Button
             variant="secondary"
             onClick={() => setRabatt((r) => ({ ...r, aktiv: true }))}
@@ -358,7 +356,6 @@ export function ReportForm({
           <table className="w-full min-w-[900px] text-sm">
             <thead className="text-left text-xs text-neutral-500">
               <tr>
-                <th className="p-1">Gr.</th>
                 <th className="p-1">Artikel</th>
                 <th className="p-1">Bezeichnung</th>
                 {tagLabels.map((lbl, i) => (
@@ -388,17 +385,6 @@ export function ReportForm({
                 const hasDays = l.tageswerte.some((v) => typeof v === "number" && v !== 0);
                 return (
                   <tr key={l.key} className="border-t">
-                    <td className="p-1">
-                      <select
-                        value={l.gruppe}
-                        onChange={(e) => updateLine(l.key, { gruppe: e.target.value as Gruppe })}
-                        className="rounded border px-1 py-1 text-xs"
-                      >
-                        {GRUPPEN.map((g) => (
-                          <option key={g} value={g}>{GRUPPE_LABEL[g]}</option>
-                        ))}
-                      </select>
-                    </td>
                     <td className="p-1 text-xs text-neutral-400">{l.artikelNr ?? "—"}</td>
                     <td className="p-1">
                       <div className="flex flex-wrap items-center gap-1">
@@ -529,8 +515,8 @@ export function ReportForm({
               })}
               {sorted.length === 0 && (
                 <tr>
-                  <td colSpan={13} className="p-6 text-center text-neutral-400">
-                    Noch keine Positionen. Artikel oben suchen oder leere Zeile hinzufügen.
+                  <td colSpan={12} className="p-6 text-center text-neutral-400">
+                    Noch keine Positionen. Oben über die Suche hinzufügen.
                   </td>
                 </tr>
               )}

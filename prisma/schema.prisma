@@ -173,6 +173,11 @@ model Report {
   photos   ReportPhoto[]
   emails   EmailLog[]
 
+  // Digitale Unterschrift Bauherrschaft
+  signaturBauherr String?   @db.Text           // PNG als Data-URL
+  signaturName    String?                      // Name des Unterzeichners
+  signaturAm      DateTime?
+
   deletedAt DateTime?                          // Papierkorb (Soft-Delete)
 
   createdAt DateTime @default(now())

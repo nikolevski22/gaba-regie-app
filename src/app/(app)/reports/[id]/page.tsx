@@ -7,6 +7,7 @@ import { trashReportAndRedirect } from "@/lib/actions/reports";
 import { saveReportAsTemplate } from "@/lib/actions/templates";
 import { StatusControls } from "@/components/StatusControls";
 import { SendForm } from "@/components/SendForm";
+import { SignaturePad } from "@/components/SignaturePad";
 import { Button } from "@/components/ui";
 
 export default async function ReportDetailPage({
@@ -68,6 +69,13 @@ export default async function ReportDetailPage({
               <span className="tabular-nums">{formatCHF(Number(report.nettoInklMwst))}</span>
             </div>
           </div>
+
+          <SignaturePad
+            reportId={id}
+            signed={report.signaturBauherr}
+            signedName={report.signaturName}
+            signedAt={report.signaturAm?.toISOString() ?? null}
+          />
 
           <div className="rounded-lg border bg-white p-4">
             <h2 className="mb-3 text-sm font-semibold">Per E-Mail senden</h2>

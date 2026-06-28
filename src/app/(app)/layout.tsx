@@ -21,6 +21,9 @@ export default async function AppLayout({
               <Link href="/dashboard" className="text-neutral-700 hover:text-gaba">
                 Rapporte
               </Link>
+              <Link href="/statistik" className="text-neutral-700 hover:text-gaba">
+                Auswertungen
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-3 text-sm text-neutral-500">

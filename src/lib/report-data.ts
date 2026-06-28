@@ -83,6 +83,9 @@ export async function buildPdfReport(id: string): Promise<PdfReport | null> {
     abzugPct: toNum(r.abzugPct),
     mwstPct: toNum(r.mwstPct),
     zeigeAbzuege: r.zeigeAbzuege,
+    bauherrSignatur: r.signaturBauherr,
+    bauherrName: r.signaturName,
+    bauherrDatum: r.signaturAm ? r.signaturAm.toLocaleDateString("de-CH") : null,
     logoDataUrl: logoDataUrl(),
     stampDataUrl: stampDataUrl(),
   };

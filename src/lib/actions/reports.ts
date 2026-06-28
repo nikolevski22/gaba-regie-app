@@ -130,6 +130,30 @@ export async function createEmptyReport() {
   redirect(`/reports/${created.id}/edit`);
 }
 
+/** Digitale Unterschrift der Bauherrschaft speichern → Status "Unterzeichnet". */
+export async function saveSignature(reportId: string, dataUrl: string, name: string) {
+  if (!dataUrl.startsWith("data:image/")) throw new Error("Ungültige Unterschrift");
+  await prisma.report.update({
+    where: { id: reportId },
+    data: {
+      signaturBauherr: dataUrl,
+      signaturName: name || null,
+      signaturAm: new Date(),
+      status: "UNTERZEICHNET",
+    },
+  });
+  revalidatePath(`/reports/${reportId}`);
+  revalidatePath("/dashboard");
+}
+
+export async function clearSignature(reportId: string) {
+  await prisma.report.update({
+    where: { id: reportId },
+    data: { signaturBauherr: null, signaturName: null, signaturAm: null },
+  });
+  revalidatePath(`/reports/${reportId}`);
+}
+
 export async function setReportStatus(id: string, status: string) {
   await prisma.report.update({
     where: { id },

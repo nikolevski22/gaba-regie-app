@@ -35,6 +35,10 @@ export interface PdfReport {
   abzugPct?: number;
   mwstPct?: number;
   zeigeAbzuege?: boolean;
+  // Unterschrift Bauherrschaft
+  bauherrSignatur?: string | null; // PNG Data-URL
+  bauherrName?: string | null;
+  bauherrDatum?: string | null;
   // Assets
   logoDataUrl?: string;
   stampDataUrl?: string;
@@ -259,8 +263,9 @@ export function renderReportHtml(r: PdfReport): string {
     </div>
     <div class="box sig">
       <div class="title">Für die Bauherrschaft</div>
-      <div class="line">Datum:</div>
-      <div class="line">Unterschrift:</div>
+      <div class="line">Datum: ${esc(r.bauherrDatum ?? "")}</div>
+      <div class="line">Unterschrift: ${esc(r.bauherrName ?? "")}</div>
+      ${r.bauherrSignatur ? `<img class="stamp" src="${r.bauherrSignatur}"/>` : ""}
     </div>
     <div class="box totals">
       <table>

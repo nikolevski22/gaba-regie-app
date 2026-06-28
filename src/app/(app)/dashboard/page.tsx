@@ -11,7 +11,6 @@ const STATUS_LABEL: Record<string, string> = {
   UNTERZEICHNET: "Unterzeichnet",
   ABGERECHNET: "Abgerechnet",
 };
-
 const STATUS_STYLE: Record<string, string> = {
   ENTWURF: "bg-neutral-100 text-neutral-700",
   GESENDET: "bg-blue-100 text-blue-700",
@@ -19,15 +18,70 @@ const STATUS_STYLE: Record<string, string> = {
   ABGERECHNET: "bg-green-100 text-green-700",
 };
 
-export default async function DashboardPage() {
+type Dir = "asc" | "desc";
+function orderByFor(sort: string, dir: Dir) {
+  switch (sort) {
+    case "rapportBasis":
+      return { rapportBasis: dir };
+    case "objekt":
+      return { objekt: dir };
+    case "status":
+      return { status: dir };
+    case "netto":
+      return { nettoInklMwst: dir };
+    default:
+      return { datum: dir };
+  }
+}
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; sort?: string; dir?: string }>;
+}) {
+  const { q, sort = "datum", dir = "desc" } = await searchParams;
+  const direction: Dir = dir === "asc" ? "asc" : "desc";
+
+  const where = {
+    deletedAt: null,
+    ...(q
+      ? {
+          OR: [
+            { rapportBasis: { contains: q, mode: "insensitive" as const } },
+            { rapportSuffix: { contains: q, mode: "insensitive" as const } },
+            { objekt: { contains: q, mode: "insensitive" as const } },
+            { titel: { contains: q, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+  };
+
   const [reports, trashCount] = await Promise.all([
     prisma.report.findMany({
-      where: { deletedAt: null },
-      orderBy: { datum: "desc" },
-      take: 100,
+      where,
+      orderBy: orderByFor(sort, direction),
+      take: 200,
     }),
     prisma.report.count({ where: { deletedAt: { not: null } } }),
   ]);
+
+  // Sortierbare Spaltenüberschrift
+  function Th({ field, label, align }: { field: string; label: string; align?: string }) {
+    const active = sort === field;
+    const nextDir = active && direction === "asc" ? "desc" : "asc";
+    const params = new URLSearchParams();
+    params.set("sort", field);
+    params.set("dir", nextDir);
+    if (q) params.set("q", q);
+    return (
+      <th className={`px-4 py-2 ${align === "right" ? "text-right" : "text-left"}`}>
+        <Link href={`/dashboard?${params.toString()}`} className="inline-flex items-center gap-1 hover:text-gaba">
+          {label}
+          <span className="text-[10px]">{active ? (direction === "asc" ? "▲" : "▼") : "↕"}</span>
+        </Link>
+      </th>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -36,15 +90,32 @@ export default async function DashboardPage() {
         <NewReportButton />
       </div>
 
+      <form action="/dashboard" className="flex flex-wrap gap-2">
+        <input
+          name="q"
+          defaultValue={q}
+          placeholder="Suche (Rapport-Nr., Objekt, Titel)"
+          className="w-72 rounded-md border px-3 py-1.5 text-sm"
+        />
+        <input type="hidden" name="sort" value={sort} />
+        <input type="hidden" name="dir" value={dir} />
+        <button className="rounded-md border px-3 py-1.5 text-sm hover:bg-neutral-50">Suchen</button>
+        {q && (
+          <Link href="/dashboard" className="self-center text-sm text-neutral-500 hover:text-gaba">
+            Filter zurücksetzen
+          </Link>
+        )}
+      </form>
+
       <div className="overflow-x-auto rounded-lg border bg-white">
         <table className="w-full text-sm">
-          <thead className="border-b bg-neutral-50 text-left text-neutral-500">
+          <thead className="border-b bg-neutral-50 text-neutral-500">
             <tr>
-              <th className="px-4 py-2">Rapport-Nr.</th>
-              <th className="px-4 py-2">Datum</th>
-              <th className="px-4 py-2">Objekt / Titel</th>
-              <th className="px-4 py-2">Status</th>
-              <th className="px-4 py-2 text-right">Netto CHF</th>
+              <Th field="rapportBasis" label="Rapport-Nr." />
+              <Th field="datum" label="Datum" />
+              <Th field="objekt" label="Objekt / Titel" />
+              <Th field="status" label="Status" />
+              <Th field="netto" label="Netto CHF" align="right" />
               <th className="px-2 py-2"></th>
             </tr>
           </thead>
@@ -52,7 +123,7 @@ export default async function DashboardPage() {
             {reports.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-neutral-400">
-                  Noch keine Rapporte. Lege den ersten an.
+                  Keine Rapporte gefunden.
                 </td>
               </tr>
             )}
@@ -62,9 +133,7 @@ export default async function DashboardPage() {
                 id={r.id}
                 nr={rapportNr(r.rapportBasis, r.rapportSuffix) || "—"}
                 datum={r.datum.toLocaleDateString("de-CH")}
-                objektTitel={
-                  [r.objekt, r.titel].filter(Boolean).join(" · ") || "—"
-                }
+                objektTitel={[r.objekt, r.titel].filter(Boolean).join(" · ") || "—"}
                 statusLabel={STATUS_LABEL[r.status]}
                 statusClass={STATUS_STYLE[r.status]}
                 netto={formatCHF(Number(r.nettoInklMwst))}

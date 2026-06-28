@@ -191,10 +191,10 @@ export function renderReportHtml(r: PdfReport): string {
 
   .footer { margin-top: 6px; display:flex; gap:0; }
   .footer .box { border:0.5px solid #000; padding:5px 7px; }
-  .sig { flex:1; min-height: 115px; position: relative; }
-  .sig .title { text-align:center; font-weight:bold; margin-bottom: 10px; }
-  .sig .line { margin-top: 14px; }
-  .sig .stamp { position:absolute; left:50%; transform: translateX(-50%); bottom: 24px; height: 54px; }
+  .sig { flex:1; min-height: 132px; position: relative; }
+  .sig .title { text-align:center; font-weight:bold; margin-bottom: 8px; }
+  .sig .line { margin-top: 12px; }
+  .sig .stamp { position:absolute; left:50%; transform: translateX(-50%); bottom: 5px; height: 50px; }
   .totals { width: 230px; }
   .totals table { width:100%; }
   .totals td { border:0.5px solid #000; padding:2px 5px; }

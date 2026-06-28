@@ -267,11 +267,6 @@ export function renderReportHtml(r: PdfReport): string {
           totals.bruttoTotal
         )}</td></tr>
         ${abzugRows}
-        ${
-          r.zeigeAbzuege
-            ? ""
-            : `<tr><td class="tl" colspan="2" style="font-weight:normal">Konditionen werden in der Schlussrechnung berücksichtigt.</td></tr>`
-        }
       </table>
     </div>
   </div>

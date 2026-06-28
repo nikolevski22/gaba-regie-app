@@ -5,8 +5,9 @@ import { useEffect, useRef, useState } from "react";
 
 const ITEMS = [
   { href: "/admin/templates", label: "Vorlagen" },
-  { href: "/admin/resources", label: "Artikelkatalog" },
   { href: "/admin/employees", label: "Mitarbeiter" },
+  { href: "/admin/funktionen", label: "Funktionen & Ansätze" },
+  { href: "/admin/resources", label: "Artikelkatalog" },
   { href: "/admin/settings", label: "Einstellungen (MwSt)" },
 ];
 

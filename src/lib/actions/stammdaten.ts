@@ -75,23 +75,88 @@ export async function importResourcesFromUpload(formData: FormData) {
 
 // ---------- Mitarbeiter ----------
 
+// Mitarbeiter = nur Name (Funktion wird im Rapport separat gewählt).
 export async function createEmployee(formData: FormData) {
-  // Funktion wird über die verknüpfte LABOR-Ressource (Ansatz) gewählt.
-  const resourceId = String(formData.get("resourceId") ?? "").trim() || null;
-  let funktion = String(formData.get("funktion") ?? "").trim();
-  if (resourceId) {
-    const res = await prisma.resource.findUnique({ where: { id: resourceId } });
-    if (res) funktion = res.bezeichnung;
-  }
+  const vorname = String(formData.get("vorname") ?? "").trim();
+  if (!vorname) return;
   await prisma.employee.create({
     data: {
-      vorname: String(formData.get("vorname") ?? "").trim(),
+      vorname,
       nachname: String(formData.get("nachname") ?? "").trim() || null,
-      funktion,
-      resourceId,
+      funktion: "",
     },
   });
-  revalidatePath("/stammdaten/employees");
+  revalidatePath("/admin/employees");
+}
+
+// Bekannte Mitarbeiter (aus den Beispiel-Rapporten) anlegen.
+const KNOWN_EMPLOYEES = ["Claudio", "Ibrahim", "Michele", "Lirim", "Alex", "Ibo"];
+export async function seedKnownEmployees() {
+  for (const vorname of KNOWN_EMPLOYEES) {
+    const exists = await prisma.employee.findFirst({ where: { vorname } });
+    if (!exists) await prisma.employee.create({ data: { vorname, funktion: "" } });
+  }
+  revalidatePath("/admin/employees");
+}
+
+// Standard-Funktionen mit Ansätzen (LABOR-Ressourcen) sicherstellen.
+const STANDARD_FUNKTIONEN = [
+  { artikelNr: "1.021.01", bezeichnung: "Bauführer", preis: 141.4 },
+  { artikelNr: "1.021.02", bezeichnung: "Polier", preis: 129.1 },
+  { artikelNr: "1.021.03", bezeichnung: "AVOR", preis: 129.1 },
+  { artikelNr: "1.021.05", bezeichnung: "Equipenchef", preis: 125.6 },
+  { artikelNr: "1.021.07", bezeichnung: "Vorarbeiter", preis: 120.65 },
+  { artikelNr: "1.021.11", bezeichnung: "Gipser", preis: 108.45 },
+  { artikelNr: "1.021.14", bezeichnung: "Hilfsgipser", preis: 94.7 },
+  { artikelNr: "1.021.20", bezeichnung: "Maler", preis: 108.45 },
+];
+export async function seedStandardFunktionen() {
+  for (const f of STANDARD_FUNKTIONEN) {
+    await prisma.resource.upsert({
+      where: {
+        artikelNr_einheit_bezeichnung: {
+          artikelNr: f.artikelNr,
+          einheit: "Std",
+          bezeichnung: f.bezeichnung,
+        },
+      },
+      create: { ...f, einheit: "Std", kategorie: "LABOR" },
+      update: { preis: f.preis, kategorie: "LABOR" },
+    });
+  }
+  revalidatePath("/admin/funktionen");
+}
+
+// Funktion (LABOR-Ressource) anlegen / bearbeiten / entfernen.
+export async function createFunktion(formData: FormData) {
+  const bezeichnung = String(formData.get("bezeichnung") ?? "").trim();
+  if (!bezeichnung) return;
+  await prisma.resource.create({
+    data: {
+      artikelNr: String(formData.get("artikelNr") ?? "").trim() || "1.021.99",
+      bezeichnung,
+      preis: Number(formData.get("preis") ?? 0),
+      einheit: "Std",
+      kategorie: "LABOR",
+    },
+  });
+  revalidatePath("/admin/funktionen");
+}
+
+export async function updateFunktion(id: string, formData: FormData) {
+  await prisma.resource.update({
+    where: { id },
+    data: {
+      bezeichnung: String(formData.get("bezeichnung") ?? "").trim(),
+      preis: Number(formData.get("preis") ?? 0),
+    },
+  });
+  revalidatePath("/admin/funktionen");
+}
+
+export async function deleteFunktion(id: string) {
+  await prisma.resource.update({ where: { id }, data: { aktiv: false } });
+  revalidatePath("/admin/funktionen");
 }
 
 export async function updateEmployee(id: string, formData: FormData) {

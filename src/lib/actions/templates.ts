@@ -44,6 +44,32 @@ export async function deleteTemplate(id: string) {
   revalidatePath("/admin/templates");
 }
 
+/** Neuer Rapport mit den Standard-Positionen (Verputzarbeiten) — der Normalfall. */
+export async function newStandardReport() {
+  const session = await auth();
+  const mwstPct = await getDefaultMwst();
+  const created = await prisma.report.create({
+    data: {
+      datum: new Date(),
+      mwstPct,
+      authorId: session?.user ? (session.user as { id?: string }).id : null,
+      lines: {
+        create: BEISPIEL1_LINES.map((l, i) => ({
+          artikelNr: l.artikelNr,
+          bezeichnung: l.bezeichnung,
+          gruppe: l.gruppe,
+          einheit: l.einheit,
+          preis: l.preis,
+          anzahl: 0,
+          total: 0,
+          sortIndex: i,
+        })),
+      },
+    },
+  });
+  redirect(`/reports/${created.id}/edit`);
+}
+
 /** Neuen leeren Rapport anlegen und Editor öffnen. */
 export async function newBlankReport() {
   const session = await auth();

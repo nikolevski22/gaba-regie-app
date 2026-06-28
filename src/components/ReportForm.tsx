@@ -13,7 +13,8 @@ interface FormLine {
   key: string;
   resourceId?: string | null;
   artikelNr?: string | null;
-  bezeichnung: string;
+  bezeichnung: string; // Funktions-/Material-Bezeichnung (Basis)
+  personName?: string; // bei Personal: Name des Mitarbeiters (separat)
   gruppe: Gruppe;
   employeeId?: string | null;
   tageswerte: (number | null)[];
@@ -22,16 +23,24 @@ interface FormLine {
   preis: number;
 }
 
+// Mitarbeiter = nur Name (keine fixe Funktion)
 export interface EmployeeOption {
   id: string;
-  vorname: string;
-  nachname?: string | null;
-  funktion: string;
-  // aus der verknüpften Funktion (LABOR-Artikel): Ansatz + Artikelnummer
+  name: string;
+}
+
+// Funktion = LABOR-Artikel mit Stundenansatz
+export interface FunktionOption {
+  id: string;
   artikelNr?: string | null;
-  preis?: number | null;
-  einheit?: string | null;
-  resourceId?: string | null;
+  bezeichnung: string;
+  preis: number;
+  einheit: string;
+}
+
+/** Bezeichnung aus Funktion + Person zusammensetzen. */
+function composeBez(funktion: string, person?: string): string {
+  return [funktion?.trim(), person?.trim()].filter(Boolean).join(" ");
 }
 
 const GRUPPE_LABEL: Record<Gruppe, string> = {
@@ -61,8 +70,10 @@ function isoWeek(dateStr: string): number | null {
 export function ReportForm({
   initial,
   employees,
+  funktionen,
 }: {
   initial: ReportPayload;
+  funktionen: FunktionOption[];
   employees: EmployeeOption[];
 }) {
   const router = useRouter();
@@ -73,7 +84,9 @@ export function ReportForm({
     rapportBasis: initial.rapportBasis ?? "",
     rapportSuffix: initial.rapportSuffix ?? "",
     datum: initial.datum?.slice(0, 10) ?? new Date().toISOString().slice(0, 10),
-    kw: initial.kw ?? null,
+    kw:
+      initial.kw ??
+      isoWeek(initial.datum?.slice(0, 10) ?? new Date().toISOString().slice(0, 10)),
     wochenStart: initial.wochenStart?.slice(0, 10) ?? "",
     bauleitung: initial.bauleitung ?? "",
     objekt: initial.objekt ?? "",
@@ -100,6 +113,7 @@ export function ReportForm({
       resourceId: l.resourceId,
       artikelNr: l.artikelNr,
       bezeichnung: l.bezeichnung,
+      personName: "",
       gruppe: l.gruppe,
       employeeId: l.employeeId,
       tageswerte: [0, 1, 2, 3, 4, 5].map((i) => l.tageswerte[i] ?? null),
@@ -199,7 +213,8 @@ export function ReportForm({
         return {
           resourceId: l.resourceId ?? null,
           artikelNr: l.artikelNr ?? null,
-          bezeichnung: l.bezeichnung || "(ohne Bezeichnung)",
+          bezeichnung:
+            composeBez(l.bezeichnung, l.personName) || "(ohne Bezeichnung)",
           gruppe: l.gruppe,
           employeeId: l.employeeId ?? null,
           tageswerte: l.tageswerte,
@@ -342,40 +357,67 @@ export function ReportForm({
                     </td>
                     <td className="p-1 text-xs text-neutral-400">{l.artikelNr ?? "—"}</td>
                     <td className="p-1">
-                      <div className="flex items-center gap-1">
-                        <input
-                          value={l.bezeichnung}
-                          onChange={(e) => updateLine(l.key, { bezeichnung: e.target.value })}
-                          className="w-56 rounded border px-2 py-1"
-                        />
-                        {l.gruppe === "PERSONAL" && employees.length > 0 && (
-                          <select
-                            value={l.employeeId ?? ""}
-                            onChange={(e) => {
-                              const emp = employees.find((x) => x.id === e.target.value);
-                              if (!emp) {
-                                updateLine(l.key, { employeeId: null });
-                                return;
+                      <div className="flex flex-wrap items-center gap-1">
+                        {l.gruppe === "PERSONAL" ? (
+                          <>
+                            <select
+                              value={
+                                l.resourceId ??
+                                funktionen.find(
+                                  (x) =>
+                                    x.artikelNr === l.artikelNr &&
+                                    x.bezeichnung === l.bezeichnung
+                                )?.id ??
+                                ""
                               }
-                              // Funktion liefert Ansatz + Artikelnummer (nicht der Mitarbeiter selbst)
-                              updateLine(l.key, {
-                                employeeId: emp.id,
-                                bezeichnung: `${emp.funktion} ${emp.vorname}`.trim(),
-                                artikelNr: emp.artikelNr ?? l.artikelNr,
-                                resourceId: emp.resourceId ?? l.resourceId,
-                                einheit: emp.einheit ?? l.einheit ?? "Std",
-                                preis:
-                                  emp.preis != null && emp.preis > 0 ? emp.preis : l.preis,
-                              });
-                            }}
-                            className="rounded border px-1 py-1 text-xs"
-                            title="Mitarbeiter (Funktion bestimmt den Ansatz)"
-                          >
-                            <option value="">– MA –</option>
-                            {employees.map((emp) => (
-                              <option key={emp.id} value={emp.id}>{emp.vorname}</option>
-                            ))}
-                          </select>
+                              onChange={(e) => {
+                                const f = funktionen.find((x) => x.id === e.target.value);
+                                if (!f) return;
+                                updateLine(l.key, {
+                                  resourceId: f.id,
+                                  artikelNr: f.artikelNr,
+                                  bezeichnung: f.bezeichnung,
+                                  einheit: f.einheit || "Std",
+                                  preis: f.preis,
+                                });
+                              }}
+                              className="w-36 rounded border px-1 py-1 text-xs"
+                              title="Funktion (bestimmt den Ansatz)"
+                            >
+                              <option value="">Funktion …</option>
+                              {funktionen.map((f) => (
+                                <option key={f.id} value={f.id}>
+                                  {f.bezeichnung} ({f.preis.toFixed(2)})
+                                </option>
+                              ))}
+                            </select>
+                            <select
+                              value={l.employeeId ?? ""}
+                              onChange={(e) => {
+                                const emp = employees.find((x) => x.id === e.target.value);
+                                updateLine(l.key, {
+                                  employeeId: emp ? emp.id : null,
+                                  personName: emp ? emp.name : "",
+                                });
+                              }}
+                              className="w-28 rounded border px-1 py-1 text-xs"
+                              title="Mitarbeiter (Name)"
+                            >
+                              <option value="">Person …</option>
+                              {employees.map((emp) => (
+                                <option key={emp.id} value={emp.id}>{emp.name}</option>
+                              ))}
+                            </select>
+                            <span className="text-xs text-neutral-500">
+                              {composeBez(l.bezeichnung, l.personName) || "—"}
+                            </span>
+                          </>
+                        ) : (
+                          <input
+                            value={l.bezeichnung}
+                            onChange={(e) => updateLine(l.key, { bezeichnung: e.target.value })}
+                            className="w-64 rounded border px-2 py-1"
+                          />
                         )}
                       </div>
                     </td>

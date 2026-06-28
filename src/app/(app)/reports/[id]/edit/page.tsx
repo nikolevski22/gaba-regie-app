@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { loadReport } from "@/lib/report-data";
-import { ReportForm, type EmployeeOption } from "@/components/ReportForm";
+import { ReportForm, type EmployeeOption, type FunktionOption } from "@/components/ReportForm";
 import { PhotoManager } from "@/components/PhotoManager";
 import type { ReportPayload } from "@/lib/actions/reports";
 
@@ -14,12 +14,12 @@ export default async function EditReportPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [report, employees] = await Promise.all([
+  const [report, employees, funktionenRes] = await Promise.all([
     loadReport(id),
-    prisma.employee.findMany({
-      where: { aktiv: true },
-      orderBy: { vorname: "asc" },
-      include: { resource: true },
+    prisma.employee.findMany({ where: { aktiv: true }, orderBy: { vorname: "asc" } }),
+    prisma.resource.findMany({
+      where: { kategorie: "LABOR", aktiv: true },
+      orderBy: { preis: "desc" },
     }),
   ]);
   if (!report) notFound();
@@ -60,13 +60,15 @@ export default async function EditReportPage({
 
   const empOptions: EmployeeOption[] = employees.map((e) => ({
     id: e.id,
-    vorname: e.vorname,
-    nachname: e.nachname,
-    funktion: e.funktion,
-    artikelNr: e.resource?.artikelNr ?? null,
-    preis: e.resource ? Number(e.resource.preis) : null,
-    einheit: e.resource?.einheit ?? "Std",
-    resourceId: e.resourceId,
+    name: [e.vorname, e.nachname].filter(Boolean).join(" "),
+  }));
+
+  const funktionOptions: FunktionOption[] = funktionenRes.map((f) => ({
+    id: f.id,
+    artikelNr: f.artikelNr,
+    bezeichnung: f.bezeichnung,
+    preis: Number(f.preis),
+    einheit: f.einheit,
   }));
 
   return (
@@ -77,7 +79,7 @@ export default async function EditReportPage({
           → Vorschau / PDF
         </Link>
       </div>
-      <ReportForm initial={initial} employees={empOptions} />
+      <ReportForm initial={initial} employees={empOptions} funktionen={funktionOptions} />
       <PhotoManager
         reportId={id}
         photos={report.photos.map((p) => ({ id: p.id, name: p.url }))}

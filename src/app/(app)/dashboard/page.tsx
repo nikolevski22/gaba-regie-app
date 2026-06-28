@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatCHF } from "@/lib/calc";
 import { rapportNr } from "@/lib/utils";
+import { NewReportButton } from "@/components/NewReportButton";
 
 const STATUS_LABEL: Record<string, string> = {
   ENTWURF: "Entwurf",
@@ -18,22 +19,20 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 export default async function DashboardPage() {
-  const reports = await prisma.report.findMany({
-    orderBy: { datum: "desc" },
-    take: 100,
-    include: { customer: true, project: true },
-  });
+  const [reports, templates] = await Promise.all([
+    prisma.report.findMany({
+      orderBy: { datum: "desc" },
+      take: 100,
+      include: { customer: true, project: true },
+    }),
+    prisma.template.findMany({ orderBy: { createdAt: "asc" }, select: { id: true, name: true } }),
+  ]);
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Regieberichte</h1>
-        <Link
-          href="/reports/new"
-          className="rounded-md bg-gaba px-4 py-2 text-sm font-medium text-white hover:bg-gaba-dark"
-        >
-          + Neuer Rapport
-        </Link>
+        <NewReportButton templates={templates} />
       </div>
 
       <div className="overflow-hidden rounded-lg border bg-white">

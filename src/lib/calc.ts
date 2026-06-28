@@ -61,6 +61,8 @@ export interface TotalsInput {
   lines: LineInput[];
   /** Prozentsätze als Dezimal, z. B. 0.05 = 5 %. Abzüge wirken reduzierend. */
   rabattPct?: number;
+  /** Fixer Rabattbetrag in CHF. Hat Vorrang vor rabattPct, wenn > 0. */
+  rabattBetrag?: number;
   skontoPct?: number;
   abzugPct?: number;
   /** MwSt-Satz, Default 8.1 %. */
@@ -97,10 +99,14 @@ export function computeTotals(input: TotalsInput): TotalsResult {
   const abzugPct = input.abzugPct ?? 0;
   const mwstPct = input.mwstPct ?? 0.081;
 
+  const rabattBetrag = input.rabattBetrag ?? 0;
+
   const lines = input.lines.map(computeLine);
   const bruttoTotal = round2(lines.reduce((a, l) => a + l.total, 0));
 
-  const rabatt = round2(bruttoTotal * rabattPct);
+  // Fixer Rabattbetrag hat Vorrang vor Prozent.
+  const rabatt =
+    rabattBetrag > 0 ? round2(rabattBetrag) : round2(bruttoTotal * rabattPct);
   const skonto = round2((bruttoTotal - rabatt) * skontoPct);
   const abzug = round2((bruttoTotal - rabatt - skonto) * abzugPct);
 

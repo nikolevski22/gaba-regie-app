@@ -30,6 +30,7 @@ export interface PdfReport {
   lines: PdfLine[];
   photos?: string[]; // Bild-URLs / Data-URLs
   rabattPct?: number;
+  rabattBetrag?: number;
   skontoPct?: number;
   abzugPct?: number;
   mwstPct?: number;
@@ -76,6 +77,7 @@ export function renderReportHtml(r: PdfReport): string {
       preis: l.preis,
     })),
     rabattPct: r.rabattPct,
+    rabattBetrag: r.rabattBetrag,
     skontoPct: r.skontoPct,
     abzugPct: r.abzugPct,
     mwstPct,
@@ -141,18 +143,18 @@ export function renderReportHtml(r: PdfReport): string {
           .join("")}</div>`
       : "";
 
-  const abzugRows = r.zeigeAbzuege
-    ? `
-      <tr><td class="tl">Rabatt</td><td class="tr">${num(totals.rabatt)}</td></tr>
-      <tr><td class="tl">Skonto</td><td class="tr">${num(totals.skonto)}</td></tr>
-      <tr><td class="tl">Allg. Abzug</td><td class="tr">${num(totals.abzug)}</td></tr>
+  const rabattRow =
+    totals.rabatt > 0
+      ? `<tr><td class="tl">Rabatt</td><td class="tr">− ${num(totals.rabatt)}</td></tr>`
+      : "";
+  const abzugRows = `
+      ${rabattRow}
       <tr><td class="tl">MwSt ${(mwstPct * 100).toFixed(1)}%</td><td class="tr">${num(
         totals.mwst
       )}</td></tr>
       <tr class="net"><td class="tl">Netto inkl. MwSt.</td><td class="tr">${num(
         totals.nettoInklMwst
-      )}</td></tr>`
-    : "";
+      )}</td></tr>`;
 
   const firma = r.firma ?? "Gandola &amp; Battaini AG";
   const fusszeile =

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { formatCHF } from "@/lib/calc";
 import { rapportNr } from "@/lib/utils";
 import { deleteReport } from "@/lib/actions/reports";
+import { saveReportAsTemplate } from "@/lib/actions/templates";
 import { StatusControls } from "@/components/StatusControls";
 import { SendForm } from "@/components/SendForm";
 import { Button } from "@/components/ui";
@@ -101,6 +102,19 @@ export default async function ReportDetailPage({
                 ))}
               </ul>
             )}
+          </div>
+
+          <div className="rounded-lg border bg-white p-4">
+            <h2 className="mb-2 text-sm font-semibold">Als Vorlage speichern</h2>
+            <form action={saveReportAsTemplate.bind(null, id)} className="flex gap-2">
+              <input
+                name="name"
+                placeholder="Vorlagenname"
+                className="flex-1 rounded border px-2 py-1 text-sm"
+                required
+              />
+              <Button type="submit" variant="secondary">Speichern</Button>
+            </form>
           </div>
 
           <form action={deleteReport.bind(null, id)}>

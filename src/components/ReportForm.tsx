@@ -46,6 +46,18 @@ const GRUPPEN: Gruppe[] = ["PERSONAL", "MASCHINE", "FAHRZEUG", "SONSTIGES", "MAT
 let counter = 0;
 const newKey = () => `l${Date.now()}_${counter++}`;
 
+/** ISO-8601-Kalenderwoche aus einem Datum (YYYY-MM-DD). */
+function isoWeek(dateStr: string): number | null {
+  if (!dateStr) return null;
+  const d = new Date(dateStr + "T00:00:00");
+  if (Number.isNaN(d.getTime())) return null;
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil(((date.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+}
+
 export function ReportForm({
   initial,
   employees,
@@ -68,12 +80,19 @@ export function ReportForm({
     leistung: initial.leistung ?? "",
     titel: initial.titel ?? "",
     ausgefuehrteArbeiten: initial.ausgefuehrteArbeiten ?? "",
-    rabattPct: initial.rabattPct ?? 0,
-    skontoPct: initial.skontoPct ?? 0,
-    abzugPct: initial.abzugPct ?? 0,
     mwstPct: initial.mwstPct ?? 0.081,
-    zeigeAbzuege: initial.zeigeAbzuege ?? false,
   });
+
+  // Rabatt: wahlweise Prozent oder fixer Betrag
+  const initRabattBetrag = initial.rabattBetrag ?? 0;
+  const initRabattPct = initial.rabattPct ?? 0;
+  const [rabatt, setRabatt] = useState({
+    aktiv: initRabattBetrag > 0 || initRabattPct > 0,
+    modus: (initRabattBetrag > 0 ? "chf" : "pct") as "pct" | "chf",
+    wert: initRabattBetrag > 0 ? initRabattBetrag : initRabattPct * 100,
+  });
+  const rabattPct = rabatt.aktiv && rabatt.modus === "pct" ? (Number(rabatt.wert) || 0) / 100 : 0;
+  const rabattBetrag = rabatt.aktiv && rabatt.modus === "chf" ? Number(rabatt.wert) || 0 : 0;
 
   const [lines, setLines] = useState<FormLine[]>(
     (initial.lines ?? []).map((l) => ({
@@ -139,13 +158,12 @@ export function ReportForm({
     });
     const totals = computeTotals({
       lines: lineInputs,
-      rabattPct: head.rabattPct,
-      skontoPct: head.skontoPct,
-      abzugPct: head.abzugPct,
+      rabattPct,
+      rabattBetrag,
       mwstPct: head.mwstPct,
     });
     return totals;
-  }, [lines, head.rabattPct, head.skontoPct, head.abzugPct, head.mwstPct]);
+  }, [lines, rabattPct, rabattBetrag, head.mwstPct]);
 
   function lineResult(l: FormLine) {
     const hasDays = l.tageswerte.some((v) => typeof v === "number" && v !== 0);
@@ -170,11 +188,12 @@ export function ReportForm({
       leistung: head.leistung || null,
       titel: head.titel || null,
       ausgefuehrteArbeiten: head.ausgefuehrteArbeiten || null,
-      rabattPct: Number(head.rabattPct) || 0,
-      skontoPct: Number(head.skontoPct) || 0,
-      abzugPct: Number(head.abzugPct) || 0,
+      rabattPct,
+      rabattBetrag,
+      skontoPct: 0,
+      abzugPct: 0,
       mwstPct: Number(head.mwstPct) || 0.081,
-      zeigeAbzuege: head.zeigeAbzuege,
+      zeigeAbzuege: true,
       lines: lines.map((l) => {
         const r = lineResult(l);
         return {
@@ -226,10 +245,12 @@ export function ReportForm({
           <Input
             type="date"
             value={head.datum}
-            onChange={(e) => setHead({ ...head, datum: e.target.value })}
+            onChange={(e) =>
+              setHead({ ...head, datum: e.target.value, kw: isoWeek(e.target.value) })
+            }
           />
         </Field>
-        <Field label="KW">
+        <Field label="KW (automatisch aus Datum)">
           <Input
             type="number"
             value={head.kw ?? ""}
@@ -279,6 +300,12 @@ export function ReportForm({
               + {GRUPPE_LABEL[g]}
             </Button>
           ))}
+          <Button
+            variant="secondary"
+            onClick={() => setRabatt((r) => ({ ...r, aktiv: true }))}
+          >
+            + Rabatt
+          </Button>
         </div>
 
         <div className="overflow-x-auto">
@@ -429,45 +456,62 @@ export function ReportForm({
       {/* Summen */}
       <div className="flex flex-col gap-4 md:flex-row md:justify-end">
         <div className="w-full max-w-md rounded-lg border bg-white p-4">
-          <label className="mb-3 flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={head.zeigeAbzuege}
-              onChange={(e) => setHead({ ...head, zeigeAbzuege: e.target.checked })}
-            />
-            Abzüge anzeigen (Rabatt/Skonto/Abzug/MwSt)
-          </label>
-
-          <div className="space-y-1 text-sm">
+          <div className="space-y-2 text-sm">
             <Row label="Total brutto" value={formatCHF(computed.bruttoTotal)} bold />
-            {head.zeigeAbzuege && (
-              <>
-                <PctRow
-                  label="Rabatt"
-                  pct={head.rabattPct}
-                  betrag={computed.rabatt}
-                  onChange={(v) => setHead({ ...head, rabattPct: v })}
-                />
-                <PctRow
-                  label="Skonto"
-                  pct={head.skontoPct}
-                  betrag={computed.skonto}
-                  onChange={(v) => setHead({ ...head, skontoPct: v })}
-                />
-                <PctRow
-                  label="Allg. Abzug"
-                  pct={head.abzugPct}
-                  betrag={computed.abzug}
-                  onChange={(v) => setHead({ ...head, abzugPct: v })}
-                />
-                <PctRow
-                  label="MwSt"
-                  pct={head.mwstPct}
-                  betrag={computed.mwst}
-                  onChange={(v) => setHead({ ...head, mwstPct: v })}
-                />
-                <Row label="Netto inkl. MwSt." value={formatCHF(computed.nettoInklMwst)} bold />
-              </>
+
+            {rabatt.aktiv && (
+              <div className="flex items-center justify-between gap-2">
+                <span>Rabatt</span>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={rabatt.wert || ""}
+                    onChange={(e) =>
+                      setRabatt({ ...rabatt, wert: Number(e.target.value) || 0 })
+                    }
+                    className="w-20 rounded border px-2 py-0.5 text-right text-xs"
+                  />
+                  <select
+                    value={rabatt.modus}
+                    onChange={(e) =>
+                      setRabatt({ ...rabatt, modus: e.target.value as "pct" | "chf" })
+                    }
+                    className="rounded border px-1 py-0.5 text-xs"
+                  >
+                    <option value="pct">%</option>
+                    <option value="chf">CHF</option>
+                  </select>
+                  <span className="w-24 text-right tabular-nums">
+                    − {formatCHF(computed.rabatt)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setRabatt({ ...rabatt, aktiv: false, wert: 0 })}
+                    className="text-neutral-400 hover:text-red-600"
+                    title="Rabatt entfernen"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <Row
+              label={`MwSt ${(Number(head.mwstPct) * 100).toFixed(1)} %`}
+              value={formatCHF(computed.mwst)}
+            />
+            <div className="border-t pt-1">
+              <Row
+                label="Netto inkl. MwSt."
+                value={formatCHF(computed.nettoInklMwst)}
+                bold
+              />
+            </div>
+            {!rabatt.aktiv && (
+              <p className="pt-1 text-xs text-neutral-400">
+                Rabatt über den Button „+ Rabatt" oben hinzufügen.
+              </p>
             )}
           </div>
         </div>
@@ -492,34 +536,6 @@ function Row({ label, value, bold }: { label: string; value: string; bold?: bool
     <div className={`flex justify-between ${bold ? "font-semibold" : ""}`}>
       <span>{label}</span>
       <span className="tabular-nums">{value}</span>
-    </div>
-  );
-}
-
-function PctRow({
-  label,
-  pct,
-  betrag,
-  onChange,
-}: {
-  label: string;
-  pct: number;
-  betrag: number;
-  onChange: (v: number) => void;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-2">
-      <span>{label}</span>
-      <div className="flex items-center gap-2">
-        <input
-          type="number"
-          step="0.001"
-          value={pct}
-          onChange={(e) => onChange(Number(e.target.value))}
-          className="w-20 rounded border px-2 py-0.5 text-right text-xs"
-        />
-        <span className="w-24 text-right tabular-nums">{formatCHF(betrag)}</span>
-      </div>
     </div>
   );
 }

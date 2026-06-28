@@ -37,6 +37,7 @@ export default async function EditReportPage({
     titel: report.titel,
     ausgefuehrteArbeiten: report.ausgefuehrteArbeiten,
     rabattPct: n(report.rabattPct),
+    rabattBetrag: n(report.rabattBetrag),
     skontoPct: n(report.skontoPct),
     abzugPct: n(report.abzugPct),
     mwstPct: n(report.mwstPct),

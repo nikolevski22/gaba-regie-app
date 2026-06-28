@@ -1,13 +1,6 @@
 import Link from "next/link";
 import { auth, signOut } from "@/auth";
-
-const NAV = [
-  { href: "/dashboard", label: "Rapporte" },
-  { href: "/collections", label: "Sammelrapporte" },
-  { href: "/stammdaten/resources", label: "Artikelkatalog" },
-  { href: "/stammdaten/employees", label: "Mitarbeiter" },
-  { href: "/import", label: "Import" },
-];
+import { AdminMenu } from "@/components/AdminMenu";
 
 export default async function AppLayout({
   children,
@@ -25,19 +18,14 @@ export default async function AppLayout({
               GA BA
             </Link>
             <nav className="flex gap-4 text-sm">
-              {NAV.map((n) => (
-                <Link
-                  key={n.href}
-                  href={n.href}
-                  className="text-neutral-600 hover:text-gaba"
-                >
-                  {n.label}
-                </Link>
-              ))}
+              <Link href="/dashboard" className="text-neutral-700 hover:text-gaba">
+                Rapporte
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-3 text-sm text-neutral-500">
-            <span>{session?.user?.email}</span>
+            <AdminMenu />
+            <span className="hidden sm:inline">{session?.user?.email}</span>
             <form
               action={async () => {
                 "use server";

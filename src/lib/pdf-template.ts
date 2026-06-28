@@ -190,10 +190,11 @@ export function renderReportHtml(r: PdfReport): string {
   .photos img { height: 150px; width: auto; object-fit: cover; border:0.5px solid #000; }
 
   .footer { margin-top: 6px; display:flex; gap:0; }
-  .footer .box { border:0.5px solid #000; padding:4px 6px; }
-  .sig { flex:1; min-height: 70px; position: relative; }
-  .sig .title { text-align:center; font-weight:bold; }
-  .sig .stamp { position:absolute; bottom:4px; left:6px; height:44px; }
+  .footer .box { border:0.5px solid #000; padding:5px 7px; }
+  .sig { flex:1; min-height: 115px; position: relative; }
+  .sig .title { text-align:center; font-weight:bold; margin-bottom: 10px; }
+  .sig .line { margin-top: 14px; }
+  .sig .stamp { position:absolute; left:50%; transform: translateX(-50%); bottom: 24px; height: 54px; }
   .totals { width: 230px; }
   .totals table { width:100%; }
   .totals td { border:0.5px solid #000; padding:2px 5px; }
@@ -252,14 +253,14 @@ export function renderReportHtml(r: PdfReport): string {
   <div class="footer">
     <div class="box sig">
       <div class="title">${firma}</div>
-      <div>Datum: ${esc(r.datum ?? "")}</div>
-      <div>Unterschrift:</div>
+      <div class="line">Datum: ${esc(r.datum ?? "")}</div>
+      <div class="line">Unterschrift:</div>
       ${r.stampDataUrl ? `<img class="stamp" src="${r.stampDataUrl}"/>` : ""}
     </div>
     <div class="box sig">
       <div class="title">Für die Bauherrschaft</div>
-      <div>Datum:</div>
-      <div>Unterschrift:</div>
+      <div class="line">Datum:</div>
+      <div class="line">Unterschrift:</div>
     </div>
     <div class="box totals">
       <table>

@@ -32,6 +32,7 @@ const reportSchema = z.object({
   datum: z.string(), // ISO
   kw: z.number().nullish(),
   wochenStart: z.string().nullish(),
+  tagLabels: z.array(z.string()).default([]),
   bauleitung: z.string().nullish(),
   objekt: z.string().nullish(),
   leistung: z.string().nullish(),
@@ -59,6 +60,7 @@ export async function saveReport(payload: ReportPayload) {
     datum: new Date(data.datum),
     kw: data.kw ?? null,
     wochenStart: data.wochenStart ? new Date(data.wochenStart) : null,
+    tagLabels: data.tagLabels,
     bauleitung: data.bauleitung ?? null,
     objekt: data.objekt ?? null,
     leistung: data.leistung ?? null,

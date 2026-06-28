@@ -144,6 +144,8 @@ model Report {
 
   // Tagesspalten-Header: Startdatum der Woche (übrige 5 werden abgeleitet)
   wochenStart DateTime?
+  // Editierbare Spaltenbeschriftungen (6 Tage), z. B. "15.10."
+  tagLabels   String[] @default([])
 
   // Abzüge / Steuer (kaskadierend, siehe lib/calc)
   rabattPct Decimal @default(0)   @db.Decimal(6, 4)  // z. B. 0.05 = 5%

@@ -31,6 +31,7 @@ export default async function EditReportPage({
     datum: report.datum.toISOString(),
     kw: report.kw,
     wochenStart: report.wochenStart?.toISOString() ?? null,
+    tagLabels: report.tagLabels ?? [],
     bauleitung: report.bauleitung,
     objekt: report.objekt,
     leistung: report.leistung,

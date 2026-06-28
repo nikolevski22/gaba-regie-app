@@ -71,7 +71,10 @@ export async function buildPdfReport(id: string): Promise<PdfReport | null> {
     leistung: r.leistung,
     titel: r.titel,
     ausgefuehrteArbeiten: r.ausgefuehrteArbeiten,
-    tagLabels: deriveTagLabels(r.wochenStart),
+    tagLabels:
+      r.tagLabels && r.tagLabels.filter((x) => x.trim()).length > 0
+        ? r.tagLabels
+        : deriveTagLabels(r.wochenStart),
     lines,
     photos,
     rabattPct: toNum(r.rabattPct),

@@ -43,6 +43,22 @@ function composeBez(funktion: string, person?: string): string {
   return [funktion?.trim(), person?.trim()].filter(Boolean).join(" ");
 }
 
+/** 6 Arbeitstags-Labels ab Wochenstart, Wochenende übersprungen (wie Excel). */
+function deriveTagLabels(start: string): string[] {
+  if (!start) return ["", "", "", "", "", ""];
+  const d = new Date(start + "T00:00:00");
+  if (Number.isNaN(d.getTime())) return ["", "", "", "", "", ""];
+  const labels: string[] = [];
+  for (let i = 0; i < 6; i++) {
+    labels.push(
+      `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.`
+    );
+    const wd = d.getDay(); // 0=So..5=Fr..6=Sa
+    d.setDate(d.getDate() + (wd === 5 ? 3 : 1)); // Fr -> Mo überspringen
+  }
+  return labels;
+}
+
 const GRUPPE_LABEL: Record<Gruppe, string> = {
   PERSONAL: "Personal",
   MASCHINE: "Maschine",
@@ -94,6 +110,17 @@ export function ReportForm({
     titel: initial.titel ?? "",
     ausgefuehrteArbeiten: initial.ausgefuehrteArbeiten ?? "",
     mwstPct: initial.mwstPct ?? 0.081,
+  });
+
+  // Tagesspalten-Beschriftungen (editierbar; Vorschlag aus Wochenstart)
+  const [tagLabels, setTagLabels] = useState<string[]>(() => {
+    const init = initial.tagLabels ?? [];
+    if (init.filter((x) => x?.trim()).length > 0) {
+      const six = [...init];
+      while (six.length < 6) six.push("");
+      return six.slice(0, 6);
+    }
+    return deriveTagLabels(initial.wochenStart?.slice(0, 10) ?? "");
   });
 
   // Rabatt: wahlweise Prozent oder fixer Betrag
@@ -197,6 +224,7 @@ export function ReportForm({
       datum: new Date(head.datum).toISOString(),
       kw: head.kw ? Number(head.kw) : null,
       wochenStart: head.wochenStart ? new Date(head.wochenStart).toISOString() : null,
+      tagLabels,
       bauleitung: head.bauleitung || null,
       objekt: head.objekt || null,
       leistung: head.leistung || null,
@@ -272,11 +300,14 @@ export function ReportForm({
             onChange={(e) => setHead({ ...head, kw: e.target.value ? Number(e.target.value) : null })}
           />
         </Field>
-        <Field label="Wochenstart (für Tagesspalten)">
+        <Field label="Wochenstart (schlägt Tage vor)">
           <Input
             type="date"
             value={head.wochenStart}
-            onChange={(e) => setHead({ ...head, wochenStart: e.target.value })}
+            onChange={(e) => {
+              setHead({ ...head, wochenStart: e.target.value });
+              if (e.target.value) setTagLabels(deriveTagLabels(e.target.value));
+            }}
           />
         </Field>
         <Field label="Bauleitung">
@@ -330,7 +361,20 @@ export function ReportForm({
                 <th className="p-1">Gr.</th>
                 <th className="p-1">Artikel</th>
                 <th className="p-1">Bezeichnung</th>
-                <th className="p-1 text-center" colSpan={6}>Tageswerte</th>
+                {tagLabels.map((lbl, i) => (
+                  <th key={i} className="p-1">
+                    <input
+                      value={lbl}
+                      onChange={(e) => {
+                        const next = [...tagLabels];
+                        next[i] = e.target.value;
+                        setTagLabels(next);
+                      }}
+                      placeholder="Tag"
+                      className="w-12 rounded border px-1 py-0.5 text-center text-xs font-normal text-neutral-700"
+                    />
+                  </th>
+                ))}
                 <th className="p-1">Einh.</th>
                 <th className="p-1 text-right">Anzahl</th>
                 <th className="p-1 text-right">Preis</th>

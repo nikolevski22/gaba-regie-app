@@ -134,8 +134,7 @@ export default async function DashboardPage({
                 nr={rapportNr(r.rapportBasis, r.rapportSuffix) || "—"}
                 datum={r.datum.toLocaleDateString("de-CH")}
                 objektTitel={[r.objekt, r.titel].filter(Boolean).join(" · ") || "—"}
-                statusLabel={STATUS_LABEL[r.status]}
-                statusClass={STATUS_STYLE[r.status]}
+                status={r.status}
                 netto={formatCHF(Number(r.nettoInklMwst))}
               />
             ))}

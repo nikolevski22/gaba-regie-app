@@ -3,7 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatCHF } from "@/lib/calc";
 import { rapportNr } from "@/lib/utils";
-import { deleteReport } from "@/lib/actions/reports";
+import { trashReportAndRedirect } from "@/lib/actions/reports";
 import { saveReportAsTemplate } from "@/lib/actions/templates";
 import { StatusControls } from "@/components/StatusControls";
 import { SendForm } from "@/components/SendForm";
@@ -117,9 +117,9 @@ export default async function ReportDetailPage({
             </form>
           </div>
 
-          <form action={deleteReport.bind(null, id)}>
+          <form action={trashReportAndRedirect.bind(null, id)}>
             <Button variant="danger" type="submit">
-              Rapport löschen
+              In den Papierkorb
             </Button>
           </form>
         </div>

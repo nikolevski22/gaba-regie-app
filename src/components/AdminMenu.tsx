@@ -9,6 +9,7 @@ const ITEMS = [
   { href: "/admin/funktionen", label: "Funktionen & Ansätze" },
   { href: "/admin/resources", label: "Artikelkatalog" },
   { href: "/admin/settings", label: "Einstellungen (MwSt)" },
+  { href: "/reports/trash", label: "Papierkorb" },
 ];
 
 export function AdminMenu() {

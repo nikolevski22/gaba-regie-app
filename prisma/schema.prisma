@@ -171,12 +171,15 @@ model Report {
   photos   ReportPhoto[]
   emails   EmailLog[]
 
+  deletedAt DateTime?                          // Papierkorb (Soft-Delete)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([status])
   @@index([datum])
   @@index([rapportBasis])
+  @@index([deletedAt])
 }
 
 enum ReportStatus {

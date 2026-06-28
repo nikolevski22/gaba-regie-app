@@ -1,5 +1,7 @@
+"use client";
+
+import { useRef, useTransition } from "react";
 import { uploadPhotos, removePhoto } from "@/lib/actions/reports";
-import { Button } from "./ui";
 
 export function PhotoManager({
   reportId,
@@ -8,18 +10,31 @@ export function PhotoManager({
   reportId: string;
   photos: { id: string; name: string }[];
 }) {
+  const [pending, start] = useTransition();
+  const galleryRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+
+  function handleFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    const fd = new FormData();
+    Array.from(files).forEach((f) => fd.append("photos", f));
+    start(async () => {
+      await uploadPhotos(reportId, fd);
+    });
+  }
+
   return (
     <div className="rounded-lg border bg-white p-4">
       <h2 className="mb-3 text-sm font-semibold">Baustellenfotos</h2>
 
-      <div className="mb-4 flex flex-wrap gap-3">
+      <div className="mb-4 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
         {photos.map((p) => (
           <div key={p.id} className="relative">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={`/api/photos/${p.name}`}
               alt=""
-              className="h-28 w-28 rounded border object-cover"
+              className="aspect-square w-full rounded border object-cover"
             />
             <form action={removePhoto.bind(null, p.id)}>
               <button
@@ -32,22 +47,47 @@ export function PhotoManager({
           </div>
         ))}
         {photos.length === 0 && (
-          <p className="text-sm text-neutral-400">Noch keine Fotos.</p>
+          <p className="col-span-full text-sm text-neutral-400">Noch keine Fotos.</p>
         )}
       </div>
 
-      <form action={uploadPhotos.bind(null, reportId)} className="flex items-center gap-2">
-        <input
-          type="file"
-          name="photos"
-          accept="image/*"
-          multiple
-          className="text-sm"
-        />
-        <Button type="submit" variant="secondary">
-          Hochladen
-        </Button>
-      </form>
+      {/* Versteckte Inputs: Kamera (capture) und Galerie */}
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => handleFiles(e.target.files)}
+      />
+      <input
+        ref={galleryRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => handleFiles(e.target.files)}
+      />
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => cameraRef.current?.click()}
+          className="rounded-md bg-gaba px-4 py-2 text-sm font-medium text-white hover:bg-gaba-dark disabled:opacity-50"
+        >
+          📷 Foto aufnehmen
+        </button>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => galleryRef.current?.click()}
+          className="rounded-md border px-4 py-2 text-sm hover:bg-neutral-50 disabled:opacity-50"
+        >
+          🖼 Aus Galerie
+        </button>
+        {pending && <span className="self-center text-sm text-neutral-400">Lade hoch …</span>}
+      </div>
     </div>
   );
 }

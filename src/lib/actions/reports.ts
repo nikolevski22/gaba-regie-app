@@ -137,8 +137,30 @@ export async function setReportStatus(id: string, status: string) {
   revalidatePath("/dashboard");
 }
 
+/** In den Papierkorb verschieben (Soft-Delete). */
+export async function softDeleteReport(id: string) {
+  await prisma.report.update({ where: { id }, data: { deletedAt: new Date() } });
+  revalidatePath("/dashboard");
+  revalidatePath("/reports/trash");
+}
+
+/** Aus dem Papierkorb wiederherstellen. */
+export async function restoreReport(id: string) {
+  await prisma.report.update({ where: { id }, data: { deletedAt: null } });
+  revalidatePath("/dashboard");
+  revalidatePath("/reports/trash");
+}
+
+/** Endgültig löschen (aus dem Papierkorb). */
 export async function deleteReport(id: string) {
   await prisma.report.delete({ where: { id } });
+  revalidatePath("/dashboard");
+  revalidatePath("/reports/trash");
+}
+
+/** Vom Detail aus: in den Papierkorb und zurück zur Übersicht. */
+export async function trashReportAndRedirect(id: string) {
+  await prisma.report.update({ where: { id }, data: { deletedAt: new Date() } });
   revalidatePath("/dashboard");
   redirect("/dashboard");
 }

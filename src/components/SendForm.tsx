@@ -21,18 +21,23 @@ export function SendForm({
   const [message, setMessage] = useState(
     "Guten Tag\n\nanbei senden wir Ihnen den Regiebericht als PDF.\n\nFreundliche Grüsse\nGandola & Battaini AG"
   );
-  const [result, setResult] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   function submit() {
-    setResult(null);
+    setError(null);
     start(async () => {
-      const r = await sendReport(reportId, to, subject, message);
-      setResult(
-        r.status === "GESENDET"
-          ? "✓ Versendet (bzw. im Dry-Run protokolliert)."
-          : `Fehler: ${r.fehler}`
-      );
-      router.refresh();
+      try {
+        const r = await sendReport(reportId, to, subject, message);
+        if (r.status === "GESENDET") {
+          // Erfolg → Status ist 'Gesendet', zurück zur Übersicht mit Meldung
+          router.push("/dashboard?sent=1");
+          router.refresh();
+        } else {
+          setError(r.fehler ?? "Versand fehlgeschlagen.");
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Versand fehlgeschlagen.");
+      }
     });
   }
 
@@ -48,9 +53,13 @@ export function SendForm({
         <Textarea rows={5} value={message} onChange={(e) => setMessage(e.target.value)} />
       </Field>
       <Button onClick={submit} disabled={pending || !to}>
-        {pending ? "Senden …" : "Mit PDF senden"}
+        {pending ? "Senden … (PDF wird erstellt)" : "Mit PDF senden"}
       </Button>
-      {result && <p className="text-sm text-neutral-600">{result}</p>}
+      {error && (
+        <p className="rounded bg-red-50 px-3 py-2 text-sm text-red-700">
+          Versand fehlgeschlagen: {error}
+        </p>
+      )}
     </div>
   );
 }

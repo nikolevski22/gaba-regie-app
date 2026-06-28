@@ -37,9 +37,9 @@ function orderByFor(sort: string, dir: Dir) {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; sort?: string; dir?: string }>;
+  searchParams: Promise<{ q?: string; sort?: string; dir?: string; sent?: string }>;
 }) {
-  const { q, sort = "datum", dir = "desc" } = await searchParams;
+  const { q, sort = "datum", dir = "desc", sent } = await searchParams;
   const direction: Dir = dir === "asc" ? "asc" : "desc";
 
   const where = {
@@ -85,6 +85,12 @@ export default async function DashboardPage({
 
   return (
     <div className="space-y-4">
+      {sent && (
+        <div className="rounded-md bg-green-50 px-4 py-2 text-sm text-green-700">
+          ✓ Rapport wurde per E-Mail gesendet.
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">Regieberichte</h1>
         <NewReportButton />

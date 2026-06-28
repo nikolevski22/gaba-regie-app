@@ -227,33 +227,37 @@ export async function sendReport(
   subject: string,
   message: string
 ) {
-  const pdf = await generatePdf(reportId);
-  if (!pdf) throw new Error("Report nicht gefunden");
-  const report = await prisma.report.findUnique({ where: { id: reportId } });
-  const nr = rapportNr(report?.rapportBasis, report?.rapportSuffix) || "Rapport";
+  const to2 = (to ?? "").trim();
+  if (!to2) return { status: "FEHLGESCHLAGEN" as const, fehler: "Kein Empfänger angegeben." };
 
-  let status: "GESENDET" | "FEHLGESCHLAGEN" = "GESENDET";
-  let fehler: string | null = null;
   try {
-    await sendMail({
-      to,
+    const pdf = await generatePdf(reportId);
+    if (!pdf) return { status: "FEHLGESCHLAGEN" as const, fehler: "PDF konnte nicht erstellt werden." };
+
+    const report = await prisma.report.findUnique({ where: { id: reportId } });
+    const nr = rapportNr(report?.rapportBasis, report?.rapportSuffix) || "Rapport";
+
+    const res = await sendMail({
+      to: to2,
       subject,
       text: message,
       attachments: [
         { filename: `Regiebericht_${nr}.pdf`, content: pdf, contentType: "application/pdf" },
       ],
     });
-  } catch (e) {
-    status = "FEHLGESCHLAGEN";
-    fehler = e instanceof Error ? e.message : String(e);
-  }
 
-  await prisma.emailLog.create({
-    data: { reportId, empfaenger: to, betreff: subject, status, fehler },
-  });
-  if (status === "GESENDET") {
+    await prisma.emailLog.create({
+      data: { reportId, empfaenger: to2, betreff: subject, status: "GESENDET", fehler: null },
+    });
     await prisma.report.update({ where: { id: reportId }, data: { status: "GESENDET" } });
+    revalidatePath(`/reports/${reportId}`);
+    revalidatePath("/dashboard");
+    return { status: "GESENDET" as const, fehler: null, dryRun: res.dryRun };
+  } catch (e) {
+    const fehler = e instanceof Error ? e.message : String(e);
+    await prisma.emailLog
+      .create({ data: { reportId, empfaenger: to2, betreff: subject, status: "FEHLGESCHLAGEN", fehler } })
+      .catch(() => {});
+    return { status: "FEHLGESCHLAGEN" as const, fehler };
   }
-  revalidatePath(`/reports/${reportId}`);
-  return { status, fehler };
 }

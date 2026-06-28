@@ -166,25 +166,25 @@ export function renderReportHtml(r: PdfReport): string {
 <style>
   @page { size: A4; margin: 10mm; }
   * { box-sizing: border-box; }
-  body { font-family: Arial, Helvetica, sans-serif; font-size: 8.5px; color: #000; margin: 0; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; color: #000; margin: 0; }
   .sheet { width: 190mm; }
   table { border-collapse: collapse; width: 100%; }
-  .head td { border: 0.5px solid #000; padding: 2px 4px; vertical-align: top; }
-  .head .lbl { width: 70px; color:#000; }
+  .head td { border: 0.5px solid #000; padding: 3px 5px; vertical-align: top; font-size: 10.5px; }
+  .head .lbl { width: 80px; color:#000; }
   .head .titel { font-weight: bold; }
-  .logo-cell { border: 0 !important; text-align: right; vertical-align: top; width: 120px; }
-  .logo-cell img { width: 110px; }
-  .arbeiten td { border: 0.5px solid #000; height: 16px; padding: 2px 4px; }
+  .logo-cell { border: 0 !important; text-align: right; vertical-align: top; width: 130px; }
+  .logo-cell img { width: 120px; }
+  .arbeiten td { border: 0.5px solid #000; height: 18px; padding: 3px 5px; font-size: 10.5px; }
 
-  table.pos { margin-top: 4px; }
-  table.pos th, table.pos td { border: 0.5px solid #000; padding: 1px 3px; font-weight: normal; }
-  table.pos th { background:#fff; font-weight: normal; }
-  .art { width: 56px; }
-  .bez { width: auto; }
-  .day { width: 26px; }
-  .c { text-align: center; width: 30px; }
-  .r { text-align: right; width: 52px; }
-  tr.empty td { height: 13px; }
+  table.pos { margin-top: 5px; table-layout: fixed; }
+  table.pos th, table.pos td { border: 0.5px solid #000; padding: 2px 4px; font-weight: normal; font-size: 10px; overflow: hidden; }
+  table.pos th { background:#fff; font-weight: bold; }
+  .art { width: 7%; }
+  .bez { width: 27%; }
+  .day { width: 4.2%; }
+  .c { text-align: center; width: 5%; }
+  .r { text-align: right; width: 11.3%; }
+  tr.empty td { height: 17px; }
   tr.grp .grp-label { font-weight: bold; }
   .photos { display:flex; gap:4px; margin-top:6px; }
   .photos img { height: 150px; width: auto; object-fit: cover; border:0.5px solid #000; }

@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    id: "/",
     name: "GA BA Regieberichte",
     short_name: "GA BA",
     description: "Regieberichte Gandola & Battaini AG",

@@ -43,21 +43,26 @@ function composeBez(funktion: string, person?: string): string {
   return [funktion?.trim(), person?.trim()].filter(Boolean).join(" ");
 }
 
-/** 6 Arbeitstags-Labels ab Wochenstart, Wochenende übersprungen (wie Excel). */
+const WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+
+/** 5 Arbeitstags-Labels (Mo–Fr) ab Wochenstart, mit Wochentag, z. B. "Mo, 29.06." */
 function deriveTagLabels(start: string): string[] {
-  if (!start) return ["", "", "", "", "", ""];
+  if (!start) return ["", "", "", "", ""];
   const d = new Date(start + "T00:00:00");
-  if (Number.isNaN(d.getTime())) return ["", "", "", "", "", ""];
+  if (Number.isNaN(d.getTime())) return ["", "", "", "", ""];
   const labels: string[] = [];
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 5; i++) {
     labels.push(
-      `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.`
+      `${WD[d.getDay()]}, ${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.`
     );
     const wd = d.getDay(); // 0=So..5=Fr..6=Sa
     d.setDate(d.getDate() + (wd === 5 ? 3 : 1)); // Fr -> Mo überspringen
   }
   return labels;
 }
+
+const DAY_COUNT = 5;
+const emptyDays = (): (number | null)[] => Array(DAY_COUNT).fill(null);
 
 const GRUPPE_LABEL: Record<Gruppe, string> = {
   PERSONAL: "Personal",
@@ -116,9 +121,9 @@ export function ReportForm({
   const [tagLabels, setTagLabels] = useState<string[]>(() => {
     const init = initial.tagLabels ?? [];
     if (init.filter((x) => x?.trim()).length > 0) {
-      const six = [...init];
-      while (six.length < 6) six.push("");
-      return six.slice(0, 6);
+      const arr = [...init];
+      while (arr.length < DAY_COUNT) arr.push("");
+      return arr.slice(0, DAY_COUNT);
     }
     return deriveTagLabels(initial.wochenStart?.slice(0, 10) ?? "");
   });
@@ -143,7 +148,7 @@ export function ReportForm({
       personName: "",
       gruppe: l.gruppe,
       employeeId: l.employeeId,
-      tageswerte: [0, 1, 2, 3, 4, 5].map((i) => l.tageswerte[i] ?? null),
+      tageswerte: Array.from({ length: DAY_COUNT }, (_, i) => l.tageswerte[i] ?? null),
       einheit: l.einheit,
       anzahlManual: l.anzahl ?? null,
       preis: l.preis,
@@ -165,7 +170,7 @@ export function ReportForm({
         artikelNr: r.artikelNr,
         bezeichnung: r.bezeichnung,
         gruppe: kategorieToGruppe(r.kategorie),
-        tageswerte: [null, null, null, null, null, null],
+        tageswerte: emptyDays(),
         einheit: r.einheit,
         anzahlManual: null,
         preis: r.preis,
@@ -179,7 +184,7 @@ export function ReportForm({
         key: newKey(),
         bezeichnung: "",
         gruppe,
-        tageswerte: [null, null, null, null, null, null],
+        tageswerte: emptyDays(),
         einheit: gruppe === "PERSONAL" ? "Std" : "Stk",
         anzahlManual: null,
         preis: 0,
@@ -368,7 +373,7 @@ export function ReportForm({
                         setTagLabels(next);
                       }}
                       placeholder="Tag"
-                      className="w-12 rounded border px-1 py-0.5 text-center text-xs font-normal text-neutral-700"
+                      className="w-20 rounded border px-1 py-0.5 text-center text-xs font-normal text-neutral-700"
                     />
                   </th>
                 ))}

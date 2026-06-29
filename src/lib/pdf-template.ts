@@ -93,8 +93,8 @@ export function renderReportHtml(r: PdfReport): string {
     ordered.push(...r.lines.filter((l) => l.gruppe === g));
   }
 
-  const dayCols = r.tagLabels.slice(0, 6);
-  while (dayCols.length < 6) dayCols.push("");
+  const dayCols = r.tagLabels.slice(0, 5);
+  while (dayCols.length < 5) dayCols.push("");
 
   let materialHeaderInserted = false;
   const bodyRows = ordered
@@ -104,11 +104,11 @@ export function renderReportHtml(r: PdfReport): string {
       if (l.gruppe === "MATERIAL" && !materialHeaderInserted) {
         materialHeaderInserted = true;
         prefix = `<tr class="grp"><td></td><td class="grp-label">Material</td>${"<td></td>".repeat(
-          6
+          5
         )}<td></td><td></td><td></td><td></td></tr>`;
       }
-      const tw = (l.tageswerte ?? []).slice(0, 6);
-      while (tw.length < 6) tw.push(null);
+      const tw = (l.tageswerte ?? []).slice(0, 5);
+      while (tw.length < 5) tw.push(null);
       const dayCells = tw.map((v) => `<td class="c">${qty(v)}</td>`).join("");
       return (
         prefix +
@@ -132,12 +132,12 @@ export function renderReportHtml(r: PdfReport): string {
     .map(
       () =>
         `<tr class="empty"><td></td><td></td>${"<td></td>".repeat(
-          6
+          5
         )}<td></td><td></td><td></td><td></td></tr>`
     )
     .join("");
 
-  const dayHeaders = dayCols.map((d) => `<th class="c day">${esc(d)}</th>`).join("");
+  const dayHeaders = dayCols.map((d) => `<th class="day">${esc(d)}</th>`).join("");
 
   const photosBand =
     r.photos && r.photos.length
@@ -183,11 +183,11 @@ export function renderReportHtml(r: PdfReport): string {
   table.pos { margin-top: 5px; table-layout: fixed; }
   table.pos th, table.pos td { border: 0.5px solid #000; padding: 2px 4px; font-weight: normal; font-size: 10px; overflow: hidden; }
   table.pos th { background:#fff; font-weight: bold; }
-  .art { width: 7%; }
-  .bez { width: 27%; }
-  .day { width: 4.2%; }
+  .art { width: 8%; }
+  .bez { width: 22%; }
+  .day { text-align: center; width: 7%; }
   .c { text-align: center; width: 5%; }
-  .r { text-align: right; width: 11.3%; }
+  .r { text-align: right; width: 10%; }
   tr.empty td { height: 17px; }
   tr.grp .grp-label { font-weight: bold; }
   .photos { display:flex; gap:4px; margin-top:6px; }

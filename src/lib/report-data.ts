@@ -6,14 +6,16 @@ import { rapportNr } from "./utils";
 import { computeTotals, type LineInput } from "./calc";
 import type { PdfReport, PdfLine } from "./pdf-template";
 
-/** 6 Arbeitstags-Labels ab Wochenstart, Wochenende übersprungen (wie Excel). */
+const WD = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+
+/** 5 Arbeitstags-Labels (Mo–Fr) ab Wochenstart, mit Wochentag, z. B. "Mo, 29.06." */
 export function deriveTagLabels(start?: Date | null): string[] {
-  if (!start) return ["", "", "", "", "", ""];
+  if (!start) return ["", "", "", "", ""];
   const labels: string[] = [];
   const d = new Date(start);
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 5; i++) {
     labels.push(
-      `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.`
+      `${WD[d.getDay()]}, ${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.`
     );
     const wd = d.getDay(); // 0=So ... 5=Fr ... 6=Sa
     d.setDate(d.getDate() + (wd === 5 ? 3 : 1)); // Fr -> Mo überspringen

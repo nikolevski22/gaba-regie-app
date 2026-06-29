@@ -24,13 +24,18 @@ export async function sendMail(opts: MailOptions): Promise<{ dryRun: boolean }> 
     return { dryRun: true };
   }
 
+  const port = Number(process.env.SMTP_PORT ?? 587);
   const transport = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT ?? 587),
-    secure: Number(process.env.SMTP_PORT ?? 587) === 465,
+    port,
+    secure: port === 465,
     auth: process.env.SMTP_USER
       ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
       : undefined,
+    // Schnell scheitern statt hängen, wenn der SMTP-Port nicht erreichbar ist
+    connectionTimeout: 12000,
+    greetingTimeout: 12000,
+    socketTimeout: 20000,
   });
 
   await transport.sendMail({

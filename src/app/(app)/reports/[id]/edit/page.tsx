@@ -40,6 +40,7 @@ export default async function EditReportPage({
     rabattPct: n(report.rabattPct),
     rabattBetrag: n(report.rabattBetrag),
     skontoPct: n(report.skontoPct),
+    skontoBetrag: n(report.skontoBetrag),
     abzugPct: n(report.abzugPct),
     mwstPct: n(report.mwstPct),
     zeigeAbzuege: report.zeigeAbzuege,

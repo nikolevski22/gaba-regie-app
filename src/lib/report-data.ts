@@ -82,6 +82,7 @@ export async function buildPdfReport(id: string): Promise<PdfReport | null> {
     rabattPct: toNum(r.rabattPct),
     rabattBetrag: toNum(r.rabattBetrag),
     skontoPct: toNum(r.skontoPct),
+    skontoBetrag: toNum(r.skontoBetrag),
     abzugPct: toNum(r.abzugPct),
     mwstPct: toNum(r.mwstPct),
     zeigeAbzuege: r.zeigeAbzuege,
@@ -108,6 +109,7 @@ export async function recomputeAndPersistTotals(reportId: string) {
     rabattPct: toNum(r.rabattPct),
     rabattBetrag: toNum(r.rabattBetrag),
     skontoPct: toNum(r.skontoPct),
+    skontoBetrag: toNum(r.skontoBetrag),
     abzugPct: toNum(r.abzugPct),
     mwstPct: toNum(r.mwstPct),
   });

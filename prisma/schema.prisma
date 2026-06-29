@@ -151,6 +151,7 @@ model Report {
   rabattPct Decimal @default(0)   @db.Decimal(6, 4)  // z. B. 0.05 = 5%
   rabattBetrag Decimal @default(0) @db.Decimal(12, 2) // fixer Rabatt CHF (Vorrang vor %)
   skontoPct Decimal @default(0)   @db.Decimal(6, 4)
+  skontoBetrag Decimal @default(0) @db.Decimal(12, 2) // fixer Skonto CHF (Vorrang vor %)
   abzugPct  Decimal @default(0)   @db.Decimal(6, 4)
   mwstPct   Decimal @default(0.081) @db.Decimal(6, 4)
   zeigeAbzuege Boolean @default(true)         // Summenblock (Rabatt/MwSt/Netto) im PDF

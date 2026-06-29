@@ -32,6 +32,7 @@ export interface PdfReport {
   rabattPct?: number;
   rabattBetrag?: number;
   skontoPct?: number;
+  skontoBetrag?: number;
   abzugPct?: number;
   mwstPct?: number;
   zeigeAbzuege?: boolean;
@@ -83,6 +84,7 @@ export function renderReportHtml(r: PdfReport): string {
     rabattPct: r.rabattPct,
     rabattBetrag: r.rabattBetrag,
     skontoPct: r.skontoPct,
+    skontoBetrag: r.skontoBetrag,
     abzugPct: r.abzugPct,
     mwstPct,
   });
@@ -151,8 +153,13 @@ export function renderReportHtml(r: PdfReport): string {
     totals.rabatt > 0
       ? `<tr><td class="tl">Rabatt</td><td class="tr">− ${num(totals.rabatt)}</td></tr>`
       : "";
+  const skontoRow =
+    totals.skonto > 0
+      ? `<tr><td class="tl">Skonto</td><td class="tr">− ${num(totals.skonto)}</td></tr>`
+      : "";
   const abzugRows = `
       ${rabattRow}
+      ${skontoRow}
       <tr><td class="tl">MwSt ${(mwstPct * 100).toFixed(1)}%</td><td class="tr">${num(
         totals.mwst
       )}</td></tr>

@@ -64,6 +64,8 @@ export interface TotalsInput {
   /** Fixer Rabattbetrag in CHF. Hat Vorrang vor rabattPct, wenn > 0. */
   rabattBetrag?: number;
   skontoPct?: number;
+  /** Fixer Skontobetrag in CHF. Hat Vorrang vor skontoPct, wenn > 0. */
+  skontoBetrag?: number;
   abzugPct?: number;
   /** MwSt-Satz, Default 8.1 %. */
   mwstPct?: number;
@@ -104,10 +106,13 @@ export function computeTotals(input: TotalsInput): TotalsResult {
   const lines = input.lines.map(computeLine);
   const bruttoTotal = round2(lines.reduce((a, l) => a + l.total, 0));
 
-  // Fixer Rabattbetrag hat Vorrang vor Prozent.
+  const skontoBetrag = input.skontoBetrag ?? 0;
+
+  // Fixer Betrag hat jeweils Vorrang vor Prozent.
   const rabatt =
     rabattBetrag > 0 ? round2(rabattBetrag) : round2(bruttoTotal * rabattPct);
-  const skonto = round2((bruttoTotal - rabatt) * skontoPct);
+  const skonto =
+    skontoBetrag > 0 ? round2(skontoBetrag) : round2((bruttoTotal - rabatt) * skontoPct);
   const abzug = round2((bruttoTotal - rabatt - skonto) * abzugPct);
 
   const mwstBasis = round2(bruttoTotal - rabatt - skonto - abzug);

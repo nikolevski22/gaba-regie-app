@@ -128,16 +128,23 @@ export function ReportForm({
     return deriveTagLabels(initial.wochenStart?.slice(0, 10) ?? "");
   });
 
-  // Rabatt: wahlweise Prozent oder fixer Betrag
+  // Rabatt & Skonto: je wahlweise Prozent oder fixer Betrag (fest eingebaut)
   const initRabattBetrag = initial.rabattBetrag ?? 0;
   const initRabattPct = initial.rabattPct ?? 0;
+  const initSkontoBetrag = initial.skontoBetrag ?? 0;
+  const initSkontoPct = initial.skontoPct ?? 0;
   const [rabatt, setRabatt] = useState({
-    aktiv: initRabattBetrag > 0 || initRabattPct > 0,
     modus: (initRabattBetrag > 0 ? "chf" : "pct") as "pct" | "chf",
     wert: initRabattBetrag > 0 ? initRabattBetrag : initRabattPct * 100,
   });
-  const rabattPct = rabatt.aktiv && rabatt.modus === "pct" ? (Number(rabatt.wert) || 0) / 100 : 0;
-  const rabattBetrag = rabatt.aktiv && rabatt.modus === "chf" ? Number(rabatt.wert) || 0 : 0;
+  const [skonto, setSkonto] = useState({
+    modus: (initSkontoBetrag > 0 ? "chf" : "pct") as "pct" | "chf",
+    wert: initSkontoBetrag > 0 ? initSkontoBetrag : initSkontoPct * 100,
+  });
+  const rabattPct = rabatt.modus === "pct" ? (Number(rabatt.wert) || 0) / 100 : 0;
+  const rabattBetrag = rabatt.modus === "chf" ? Number(rabatt.wert) || 0 : 0;
+  const skontoPct = skonto.modus === "pct" ? (Number(skonto.wert) || 0) / 100 : 0;
+  const skontoBetrag = skonto.modus === "chf" ? Number(skonto.wert) || 0 : 0;
 
   const [lines, setLines] = useState<FormLine[]>(
     (initial.lines ?? []).map((l) => ({
@@ -206,10 +213,12 @@ export function ReportForm({
       lines: lineInputs,
       rabattPct,
       rabattBetrag,
+      skontoPct,
+      skontoBetrag,
       mwstPct: head.mwstPct,
     });
     return totals;
-  }, [lines, rabattPct, rabattBetrag, head.mwstPct]);
+  }, [lines, rabattPct, rabattBetrag, skontoPct, skontoBetrag, head.mwstPct]);
 
   function lineResult(l: FormLine) {
     const hasDays = l.tageswerte.some((v) => typeof v === "number" && v !== 0);
@@ -237,7 +246,8 @@ export function ReportForm({
       ausgefuehrteArbeiten: head.ausgefuehrteArbeiten || null,
       rabattPct,
       rabattBetrag,
-      skontoPct: 0,
+      skontoPct,
+      skontoBetrag,
       abzugPct: 0,
       mwstPct: Number(head.mwstPct) || 0.081,
       zeigeAbzuege: true,
@@ -349,12 +359,6 @@ export function ReportForm({
               placeholder="Material, Maschine, Fahrzeug, Personal … suchen & hinzufügen"
             />
           </div>
-          <Button
-            variant="secondary"
-            onClick={() => setRabatt((r) => ({ ...r, aktiv: true }))}
-          >
-            + Rabatt
-          </Button>
         </div>
 
         <div className="overflow-x-auto">
@@ -419,7 +423,7 @@ export function ReportForm({
                               className="w-36 rounded border px-1 py-1 text-xs"
                               title="Funktion (bestimmt den Ansatz)"
                             >
-                              <option value="">Funktion …</option>
+                              <option value="">Funktion</option>
                               {funktionen.map((f) => (
                                 <option key={f.id} value={f.id}>
                                   {f.bezeichnung} ({f.preis.toFixed(2)})
@@ -438,14 +442,11 @@ export function ReportForm({
                               className="w-28 rounded border px-1 py-1 text-xs"
                               title="Mitarbeiter (Name)"
                             >
-                              <option value="">Person …</option>
+                              <option value="">Mitarbeiter</option>
                               {employees.map((emp) => (
                                 <option key={emp.id} value={emp.id}>{emp.name}</option>
                               ))}
                             </select>
-                            <span className="text-xs text-neutral-500">
-                              {composeBez(l.bezeichnung, l.personName) || "—"}
-                            </span>
                           </>
                         ) : (
                           <input
@@ -536,43 +537,20 @@ export function ReportForm({
           <div className="space-y-2 text-sm">
             <Row label="Total brutto" value={formatCHF(computed.bruttoTotal)} bold />
 
-            {rabatt.aktiv && (
-              <div className="flex items-center justify-between gap-2">
-                <span>Rabatt</span>
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={rabatt.wert || ""}
-                    onChange={(e) =>
-                      setRabatt({ ...rabatt, wert: Number(e.target.value) || 0 })
-                    }
-                    className="w-20 rounded border px-2 py-0.5 text-right text-xs"
-                  />
-                  <select
-                    value={rabatt.modus}
-                    onChange={(e) =>
-                      setRabatt({ ...rabatt, modus: e.target.value as "pct" | "chf" })
-                    }
-                    className="rounded border px-1 py-0.5 text-xs"
-                  >
-                    <option value="pct">%</option>
-                    <option value="chf">CHF</option>
-                  </select>
-                  <span className="w-24 text-right tabular-nums">
-                    − {formatCHF(computed.rabatt)}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setRabatt({ ...rabatt, aktiv: false, wert: 0 })}
-                    className="text-neutral-400 hover:text-red-600"
-                    title="Rabatt entfernen"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-            )}
+            <DiscountInput
+              label="Rabatt"
+              modus={rabatt.modus}
+              wert={rabatt.wert}
+              amount={computed.rabatt}
+              onChange={(p) => setRabatt({ ...rabatt, ...p })}
+            />
+            <DiscountInput
+              label="Skonto"
+              modus={skonto.modus}
+              wert={skonto.wert}
+              amount={computed.skonto}
+              onChange={(p) => setSkonto({ ...skonto, ...p })}
+            />
 
             <Row
               label={`MwSt ${(Number(head.mwstPct) * 100).toFixed(1)} %`}
@@ -585,11 +563,10 @@ export function ReportForm({
                 bold
               />
             </div>
-            {!rabatt.aktiv && (
-              <p className="pt-1 text-xs text-neutral-400">
-                Rabatt über den Button „+ Rabatt" oben hinzufügen.
-              </p>
-            )}
+            <p className="pt-1 text-xs text-neutral-400">
+              Rabatt/Skonto leer lassen, wenn keiner gewährt wird – dann erscheinen sie
+              auch nicht im PDF.
+            </p>
           </div>
         </div>
       </div>
@@ -613,6 +590,47 @@ function Row({ label, value, bold }: { label: string; value: string; bold?: bool
     <div className={`flex justify-between ${bold ? "font-semibold" : ""}`}>
       <span>{label}</span>
       <span className="tabular-nums">{value}</span>
+    </div>
+  );
+}
+
+function DiscountInput({
+  label,
+  modus,
+  wert,
+  amount,
+  onChange,
+}: {
+  label: string;
+  modus: "pct" | "chf";
+  wert: number;
+  amount: number;
+  onChange: (p: { wert?: number; modus?: "pct" | "chf" }) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span>{label}</span>
+      <div className="flex items-center gap-1">
+        <input
+          type="number"
+          step="0.01"
+          value={wert || ""}
+          placeholder="0"
+          onChange={(e) => onChange({ wert: Number(e.target.value) || 0 })}
+          className="w-20 rounded border px-2 py-0.5 text-right text-xs"
+        />
+        <select
+          value={modus}
+          onChange={(e) => onChange({ modus: e.target.value as "pct" | "chf" })}
+          className="rounded border px-1 py-0.5 text-xs"
+        >
+          <option value="pct">%</option>
+          <option value="chf">CHF</option>
+        </select>
+        <span className="w-24 text-right tabular-nums text-neutral-600">
+          {amount > 0 ? `− ${formatCHF(amount)}` : "—"}
+        </span>
+      </div>
     </div>
   );
 }

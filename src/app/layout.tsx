@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { RegisterSW } from "@/components/RegisterSW";
 
 const siteUrl =
   process.env.AUTH_URL ?? "https://gaba-rapport.nikolevski-consulting.ch";
@@ -34,7 +35,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="de">
-      <body>{children}</body>
+      <body>
+        <RegisterSW />
+        {children}
+      </body>
     </html>
   );
 }

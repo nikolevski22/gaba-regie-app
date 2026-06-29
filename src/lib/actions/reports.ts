@@ -54,10 +54,37 @@ export async function saveReport(payload: ReportPayload) {
   const data = reportSchema.parse(payload);
   const session = await auth();
 
+  // Rapport-Nr.: Basis manuell, Suffix wird automatisch vergeben (-1, -2, …).
+  const basis = data.rapportBasis?.trim() || null;
+  let suffix: string | null = null;
+  if (basis) {
+    const existing = data.id
+      ? await prisma.report.findUnique({ where: { id: data.id } })
+      : null;
+    if (existing && existing.rapportBasis === basis && existing.rapportSuffix) {
+      // Basis unverändert → bestehende Nummer behalten
+      suffix = existing.rapportSuffix;
+    } else {
+      // Höchsten vorhandenen Suffix dieser Basis ermitteln (+1), kollisionssicher
+      const siblings = await prisma.report.findMany({
+        where: {
+          rapportBasis: basis,
+          ...(data.id ? { id: { not: data.id } } : {}),
+        },
+        select: { rapportSuffix: true },
+      });
+      const maxN = siblings.reduce((m, s) => {
+        const n = parseInt(s.rapportSuffix ?? "0", 10);
+        return Number.isNaN(n) ? m : Math.max(m, n);
+      }, 0);
+      suffix = String(maxN + 1);
+    }
+  }
+
   const header = {
-    rapportBasis: data.rapportBasis ?? null,
-    rapportSuffix: data.rapportSuffix ?? null,
-    rapportNr: rapportNr(data.rapportBasis, data.rapportSuffix) || null,
+    rapportBasis: basis,
+    rapportSuffix: suffix,
+    rapportNr: rapportNr(basis, suffix) || null,
     datum: new Date(data.datum),
     kw: data.kw ?? null,
     wochenStart: data.wochenStart ? new Date(data.wochenStart) : null,

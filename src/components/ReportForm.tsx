@@ -103,7 +103,6 @@ export function ReportForm({
 
   const [head, setHead] = useState({
     rapportBasis: initial.rapportBasis ?? "",
-    rapportSuffix: initial.rapportSuffix ?? "",
     datum: initial.datum?.slice(0, 10) ?? new Date().toISOString().slice(0, 10),
     kw:
       initial.kw ??
@@ -234,7 +233,7 @@ export function ReportForm({
     const payload: ReportPayload = {
       id: initial.id ?? null,
       rapportBasis: head.rapportBasis || null,
-      rapportSuffix: head.rapportSuffix || null,
+      rapportSuffix: null, // wird serverseitig automatisch vergeben
       datum: new Date(head.datum).toISOString(),
       kw: head.kw ? Number(head.kw) : null,
       wochenStart: head.wochenStart ? new Date(head.wochenStart).toISOString() : null,
@@ -285,18 +284,11 @@ export function ReportForm({
     <div className="space-y-5">
       {/* Kopfdaten */}
       <div className="grid grid-cols-2 gap-3 rounded-lg border bg-white p-4 md:grid-cols-4">
-        <Field label="Rapport-Nr. (Basis)">
+        <Field label="Rapport-Nr. (wird automatisch nummeriert: -1, -2, …)">
           <Input
             value={head.rapportBasis}
             onChange={(e) => setHead({ ...head, rapportBasis: e.target.value })}
             placeholder="25100002"
-          />
-        </Field>
-        <Field label="Suffix">
-          <Input
-            value={head.rapportSuffix}
-            onChange={(e) => setHead({ ...head, rapportSuffix: e.target.value })}
-            placeholder="5"
           />
         </Field>
         <Field label="Datum">
